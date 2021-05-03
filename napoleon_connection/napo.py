@@ -265,9 +265,9 @@ def load_dashboard_data(username, request_name, context):
 
     context['tagcloud'] = tagcloud
 
-    print('synergy tweets start - {}'.format(datetime.now()))
-    synergetic_tweets = list(tweetcollection.find({"requests": request_name, "synergy": {"$ne": 0, "$exists": True}}, sort=[("synergy", pymongo.ASCENDING)], limit=24))
-    context['syn_tweets'] = synergetic_tweets
+    # print('synergy tweets start - {}'.format(datetime.now()))
+    # synergetic_tweets = list(tweetcollection.find({"requests": request_name, "synergy": {"$ne": 0, "$exists": True}}, sort=[("synergy", pymongo.ASCENDING)], limit=24))
+    # context['syn_tweets'] = synergetic_tweets
 
     print('dashboard base data done - {}'.format(datetime.now()))
 

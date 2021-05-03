@@ -136,7 +136,8 @@ def load_tweets(request, dashboard):
     db = []
     last_syn = 0
     for i, tweet in enumerate(tweets):
-        db.append(tweet['tweet_html'])
+        if 'tweet_html' in tweet:
+            db.append(tweet['tweet_html'])
         if i == len(tweets)-1:
             last_syn = tweet['synergy']
 
