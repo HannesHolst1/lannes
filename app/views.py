@@ -1,14 +1,9 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404, redirect
 from django.template import loader
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from django import template
+import json
 
 ## custom
 from napoleon_connection import napo
@@ -48,7 +43,9 @@ def dashboard(request, dashboard):
     napo.load_dashboard_data(request.user.username, context['segment'], context)
 
     html_template = loader.get_template( 'index.html' )
-    return HttpResponse(html_template.render(context, request))
+    response = HttpResponse(html_template.render(context, request))
+    response.set_cookie('last_syn', 0)
+    return response
 
 @login_required(login_url="/login/")
 def createrequest(request):
@@ -125,3 +122,26 @@ def pages(request):
     
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+def load_tweets(request, dashboard):
+    last_syn = 0 
+
+    if 'last_syn' in request.COOKIES:
+        if request.COOKIES['last_syn'] != '0':
+            last_syn = float(request.COOKIES['last_syn'])
+
+    tweets = napo.get_tweets(dashboard, last_syn)   
+
+    db = []
+    last_syn = 0
+    for i, tweet in enumerate(tweets):
+        db.append(tweet['tweet_html'])
+        if i == len(tweets)-1:
+            last_syn = tweet['synergy']
+
+    res = HttpResponse(json.dumps(db))
+    res.set_cookie('last_syn', last_syn)
+
+    return res
+

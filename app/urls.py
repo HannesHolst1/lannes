@@ -18,6 +18,8 @@ urlpatterns = [
 
     path('delete/<str:dashboard>', views.deletedashboard, name='deletedashboard'),
 
+    path('load_tweets/<str:dashboard>', views.load_tweets, name='load_tweets'),
+
     # refresh data request
     path('refresh/<str:name>', views.refresh, name='refresh'),
 

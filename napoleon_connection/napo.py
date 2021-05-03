@@ -271,6 +271,17 @@ def load_dashboard_data(username, request_name, context):
 
     print('dashboard base data done - {}'.format(datetime.now()))
 
+def get_tweets(request_name, last_syn):
+    client = MongoClient(config.mongodb['uri'])
+    db = client[config.mongodb['database']]
+    tweetcollection = db[config.mongodb['tweets_collection']]
+    if last_syn:
+        synergetic_tweets = list(tweetcollection.find({"requests": request_name, "synergy": {"$gt": last_syn, "$exists": True}}, {"_id": 0,"tweet_html":1, "synergy":1}, sort=[("synergy", pymongo.ASCENDING)], limit=6))    
+    else:
+        synergetic_tweets = list(tweetcollection.find({"requests": request_name,  "synergy": {"$ne": 0, "$exists": True}}, {"_id": 0,"tweet_html":1, "synergy":1}, sort=[("synergy", pymongo.ASCENDING)], limit=6))    
+
+    return synergetic_tweets
+
 def main():
     pass
 

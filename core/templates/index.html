@@ -380,73 +380,18 @@
 
             <div id="hotTweets" style="display: block;">
                 <!-- [ hot tweets ] start -->
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card toptweet">
-                            <div class="card-header">
-                                <h5>Tweets worth an interaction</h5>
-                            </div>
-                            <div class="card-block">
-                                <div id="HotTweetscarouselIndicators" class="carousel slide" data-interval="false">
-                                    <ol class="carousel-indicators">
-                                    {% for tweet in syn_tweets %}
-                                    {% if forloop.counter == 1 %}
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="0" class="active"></li>
-                                    {% elif forloop.counter == 4 %} 
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="1"></li>
-                                    {% elif forloop.counter == 7 %}
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="2"></li>
-                                    {% elif forloop.counter == 10 %}
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="3"></li>
-                                    {% elif forloop.counter == 13 %}
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="4"></li>
-                                    {% elif forloop.counter == 16 %}
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="5"></li>
-                                    {% elif forloop.counter == 19 %} 
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="6"></li>
-                                    {% elif forloop.counter == 22 %}
-                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="7"></li>
-                                    {% endif %}
-                                    {% endfor %}
-                                    </ol>
-                                    <div class="carousel-inner">
-                                    {% for tweet in syn_tweets %}
-                                        {% if forloop.counter == 1 %}
-                                        <div class="carousel-item active">
-                                            <div class="row">
-                                        {% elif forloop.counter == 4 or forloop.counter == 7 or forloop.counter == 10 or forloop.counter == 13 or forloop.counter == 16 or forloop.counter == 19 or forloop.counter == 22 %}
-                                        <div class="carousel-item">
-                                            <div class="row">
-                                        {% endif %}
-                                            
-                                                <div class="col-md-12 col-xl-4">
-                                                    <div class="card hottweet{{ forloop.counter }}">
-                                                        Tweet Synergy: {{ tweet.synergy }}
-                                                        <div class="card-block">
-                                                            {{ tweet.tweet_html|safe }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                        {% if forloop.last or forloop.counter == 3 or forloop.counter == 6 or forloop.counter == 9  or forloop.counter == 12 or forloop.counter == 15 or forloop.counter == 18 or forloop.counter == 21 or forloop.counter == 24%}
-                                            </div>
-                                        </div>
-                                        {% endif %}
+                    <div id="scroller" class="mb-3">
 
-                                    {% endfor %}
-                                    </div>
-                                    <a class="carousel-control-prev" style="width: 1%" href="#HotTweetscarouselIndicators" role="button" data-slide="prev">
-                                        <span class="carousel-control-prev-icon" style="left:0; margin-left: 0;filter: invert(100%);" aria-hidden="true"></span>
-                                        <span class="sr-only">Previous</span>
-                                    </a>
-                                    <a class="carousel-control-next" style="width: 1%" href="#HotTweetscarouselIndicators" role="button" data-slide="next">
-                                        <span class="carousel-control-next-icon" style="right:0; margin-right: 0;filter: invert(100%);" aria-hidden="true"></span>
-                                        <span class="sr-only">Next</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <!-- template schema, hidden from the dom -->
+                        <template id="post_template">
+
+                            <!-- template content -->
+                            <div class="row" id="tweets"></div>
+
+                        </template>
+                </div>
+                <div class="d-flex justify-content-center mb-3" id="sentinel">
+                    <div class="spinner-border" role="status"></div>
                 </div>
                 <!-- [ hot tweets ] end -->
             </div>
@@ -544,6 +489,93 @@ function enabledisplay(element) {
     x.style.display = "block";
   }
 }
+
+// twitter standard
+window.twttr = (function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0],
+    t = window.twttr || {};
+  if (d.getElementById(id)) return t;
+  js = d.createElement(s);
+  js.id = id;
+  js.src = "https://platform.twitter.com/widgets.js";
+  fjs.parentNode.insertBefore(js, fjs);
+
+  t._e = [];
+  t.ready = function(f) {
+    t._e.push(f);
+  };
+
+  return t;
+}(document, "script", "twitter-wjs"));
+
+// Get references to the dom elements
+var scroller = document.querySelector("#scroller");
+var template = document.querySelector('#post_template');
+var sentinel = document.querySelector('#sentinel');
+
+// Set a counter to count the items loaded
+var counter = 0;
+
+// Function to request new items and render to the dom
+function loadItems() {
+
+  // Use fetch to request data and pass the counter value in the QS
+  fetch(`/load_tweets/{{segment}}`).then((response) => {
+
+    // Convert the response data to JSON
+    response.json().then((data) => {
+
+      // If empty JSON, exit the function
+      if (!data.length) {
+
+        // Replace the spinner with "No more posts"
+        sentinel.innerHTML = "No more Tweets.";
+        return;
+      }
+
+      // Iterate over the items in the response
+      for (var i = 0; i < data.length; i+=3) {
+
+        // Clone the HTML template
+        let template_clone = template.content.cloneNode(true);
+
+        // Query & update the template content
+        template_clone.querySelector("#tweets").innerHTML = 
+            '<div class="col-md-6 col-xl-4"><div class="card mb-3 animated fadeIn shadow-sm"> <div class="card-block" id="content">'+
+                data[i]+
+            '</div></div></div>'+
+            '<div class="col-md-6 col-xl-4"><div class="card mb-3 animated fadeIn shadow-sm"> <div class="card-block" id="content">'+
+                data[i+1]+
+            '</div></div></div>'+
+            '<div class="col-md-6 col-xl-4"><div class="card mb-3 animated fadeIn shadow-sm"> <div class="card-block" id="content">'+
+                data[i+2]+
+            '</div></div></div>';
+
+        // Append template to dom
+        scroller.appendChild(template_clone);
+
+        counter += 1;
+
+        twttr.widgets.load();
+      }
+    }); 
+  }
+  )
+}
+
+// Create a new IntersectionObserver instance
+var intersectionObserver = new IntersectionObserver(entries => {
+
+  if (entries[0].intersectionRatio <= 0) {
+    return;
+  }
+
+  loadItems();
+
+});
+
+intersectionObserver.observe(sentinel);
+
 
 </script>
 
