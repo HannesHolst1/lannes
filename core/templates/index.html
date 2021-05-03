@@ -1,0 +1,550 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Dashboard {% endblock %} 
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+
+<link rel="stylesheet" href="/static/assets/plugins/chart-morris/css/morris.css">
+
+<style>
+    .vl {
+      border-left: 1px solid grey;
+      height: 100%;
+    }
+</style>
+
+{% endblock stylesheets %}
+
+{% block content %}
+    <div class="pcoded-content">
+        <div class="pcoded-inner-content">
+            <!-- [ breadcrumb ] start -->
+
+            <!-- [ breadcrumb ] end -->
+            <div class="main-body">
+                <div class="page-wrapper">
+                    <!-- [ Main Content ] start -->
+                    <!-- <div class="row"> -->
+                        <!--[ request name headline ] start-->
+                        <!-- <div class="col-md-12">
+                            <div class="card headline">
+                                <div class="card-block">
+                                    <div class="row d-flex align-items-center">
+                                        <div class="col-12">
+                                            <h3 class="text-center m-b-10">{{ segment }} <a href={% url 'refresh' name=segment %}><i class="feather icon-refresh-cw f-25 text-c-blue"></i></a></h3>
+                                            <p class="text-center m-b-10">Last refresh: {{ last_refresh }}</p>                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> -->
+                        <!--[ request name headline ] end-->
+                    <!-- </div> -->
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <ul class="nav nav-pills mb-3 align-items-center" id="pills-tab" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="pills-hotTweets-tab" data-toggle="pill" onclick="HandleView('hotTweets')" href="#" role="tab" aria-controls="pills-hotTweets" aria-selected="true">Hot Tweets</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="pills-stats-tab" data-toggle="pill" onclick="HandleView('stats')" href="#" role="tab" aria-controls="pills-stats" aria-selected="false">Statistics</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="pills-allTimeTweets-tab" data-toggle="pill" onclick="HandleView('allTimeTweets')" href="#" role="tab" aria-controls="pills-allTimeTweets" aria-selected="false">All Time Popular</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="pills-insights-tab" data-toggle="pill" onclick="HandleView('insights')" href="#" role="tab" aria-controls="pills-insights" aria-selected="false">Insights</a>                
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="pills-settings-tab" data-toggle="pill" onclick="HandleView('settings')" href="#" role="tab" aria-controls="pills-settings" aria-selected="false">Settings</a>                
+                            </li>
+                            <li>
+                                <div class="vl">&nbsp;&nbsp;</div>
+                            </li>
+                            <li class="nav-item">
+                                {% if request_active %}
+                                    <a style="color: grey;" title="Retrieving latest information right now...">Refresh data</a>
+                                {% else %}
+                                    <a style="color: tomato;" href={% url 'refresh' name=segment %} title="Retrieve latest Tweets. Last refresh: {{ last_refresh }}">Refresh data</a>
+                                {% endif %}
+                            </li>
+                            <li>
+                                <div class="vl">&nbsp;&nbsp;</div>
+                            </li>
+                            <li>
+                                {% if request_active %}
+                                    <i class="feather icon-activity text-c-green" title="Refresh in process...">&nbsp;</i>
+                                {% else %}
+                                    <i class="feather icon-activity" title="Nothing in progress. Ready for the next refresh!">&nbsp;</i>
+                                {% endif %}
+                            </li>
+                            <li>
+                                <div class="vl">&nbsp;&nbsp;</div>
+                            </li>
+                            <li class="nav-item">
+                                {% if request_active %}
+                                    Retrieving latest data right now... &nbsp;
+                                {% else %}
+                                    Last refresh: {{ last_refresh }} &nbsp;
+                                {% endif %}
+                            </li>
+                            <li>
+                                <div class="vl">&nbsp;&nbsp;</div>
+                            </li>
+                            <li class="nav-item">
+                                {{ segment }} &#x1F604;
+                            </li>
+                        </ul>
+                    </div> 
+                </div>
+
+            <div id="stats" style="display: none;">
+                <div class="row">
+                    <!--[ chart start ] start-->
+                    <div class="col-md-12">
+                        <div class="card headline">
+                            <div class="card-header">
+                                <h5>Activity timeline of {{ segment }}</h5>
+                            </div>
+                            <div class="card-block">
+                                <div class="row d-flex align-items-center">
+                                    <div class="col-12">
+                                                
+                                                <div class="card-block">
+                                                    <div id="morris-line-chart" class="ChartShadow" style="height:300px"></div>
+                                                </div>
+                                            
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--[ chart end ] end-->
+                </div>                    
+
+                <div class="row">
+                    <!--[ tweets last 14 days section ] start-->
+                    <div class="col-md-12 col-xl-4">
+                        <div class="card card-14days">
+                            <div class="card-block border-bottom">
+                                <h6 class="mb-4">Tweets last 14 days</h6>
+                                <div class="row d-flex align-items-center">
+                                    <div class="col-9">
+                                        <h3 class="f-w-300 d-flex align-items-center m-b-0"><i class="feather icon-arrow-{% if tweets_14day_trend < 0 %}down text-c-red {% else %}up text-c-green{% endif %} f-30 m-r-10"></i>{{ tweets_last14days }}</h3>
+                                    </div>
+                                    <div class="col-3 text-right">
+                                        {% if tweets_14day_trend <= 100 %}
+                                            {% if tweets_14day_trend > 0 %}
+                                                <p class="m-b-0"> +{{ tweets_14day_trend }}% </p>
+                                            {% elif tweets_14day_trend == 0 %}
+                                                <p class="m-b-0"> {{ tweets_14day_trend }}% </p>
+                                            {% else %}
+                                                <p class="m-b-0"> {{ tweets_14day_trend }}% </p>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-block">
+                                <div class="row align-items-center justify-content-center card-active">
+                                    <div class="col-3">
+                                        <h6 class="text-center m-b-10"><i class="feather icon-heart" title="Likes"></i> {{ likes_last14days }} </h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-message-circle" title="Replies"></i>{{ replies_last14days }}</h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-repeat" title="Retweets"></i> {{ retweets_last14days }}</h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-feather" title="Number of retweets with quotes."></i> {{ quotes_last14days }}</h6>                                            
+                                    </div>                                                                                
+                                </div>
+                            </div>                                
+                        </div>
+                    </div>
+                    <!--[ tweets last 14 days section ] end-->
+                    <!--[ tweets last 7 days section ] starts-->
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card card-7days">
+                            <div class="card-block border-bottom">
+                                <h6 class="mb-4">Tweets last 7 days</h6>
+                                <div class="row d-flex align-items-center">
+                                    <div class="col-9">
+                                        <h3 class="f-w-300 d-flex align-items-center  m-b-0"><i class="feather icon-arrow-{% if tweets_7day_trend < 0 %}down text-c-red {% else %}up text-c-green{% endif %} f-30 m-r-10"></i>{{ tweets_last7days }}</h3>
+                                    </div>
+                                    <div class="col-3 text-right">
+                                        {% if tweets_7day_trend <= 100 %}
+                                            {% if tweets_7day_trend > 0 %}
+                                                <p class="m-b-0"> +{{ tweets_7day_trend }}% </p>
+                                            {% elif tweets_7day_trend == 0 %}
+                                                <p class="m-b-0"> {{ tweets_7day_trend }}% </p>
+                                            {% else %}
+                                                <p class="m-b-0"> {{ tweets_7day_trend }}% </p>
+                                            {% endif %}
+                                        {% endif %}                                            
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-block">
+                                <div class="row align-items-center justify-content-center card-active">
+                                    <div class="col-3">
+                                        <h6 class="text-center m-b-10"><i class="feather icon-heart" title="Likes"></i> {{ likes_last7days }} </h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-message-circle" title="Replies"></i> {{ replies_last7days }}</h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-repeat" title="Retweets"></i> {{ retweets_last7days }}</h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-feather" title="Number of retweets with quotes."></i> {{ quotes_last7days }}</h6>                                            
+                                    </div>                                                                                
+                                </div>
+                            </div>                                 
+                        </div>
+                    </div>
+                    <!--[ tweets last 7 days section ] end-->
+                    <!--[ tweets today section ] starts-->
+                    <div class="col-md-12 col-xl-4">
+                        <div class="card card-todays">
+                            <div class="card-header">
+                                <h6>Tweets today</h6>
+                            </div>
+                            <div class="card-block border-bottom">
+                                <div class="row d-flex align-items-center">
+                                    <div class="col-9">
+                                        <h3 class="f-w-300 d-flex align-items-center  m-b-0"><i class="feather icon-arrow-{% if tweets_day_trend < 0 %}down text-c-red {% else %}up text-c-green{% endif %} f-30 m-r-10"></i>{{ tweets_today }}</h3>
+                                    </div>
+                                    <div class="col-3 text-right">
+                                        {% if tweets_day_trend <= 100 %}
+                                        {% if tweets_day_trend > 0 %}
+                                            <p class="m-b-0"> +{{ tweets_day_trend }}% </p>
+                                        {% elif tweets_day_trend == 0 %}
+                                            <p class="m-b-0"> {{ tweets_day_trend }}% </p>
+                                        {% else %}
+                                            <p class="m-b-0"> {{ tweets_day_trend }}% </p>
+                                        {% endif %}
+                                    {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-block">
+                                <div class="row align-items-center justify-content-center card-active">
+                                    <div class="col-3">
+                                        <h6 class="text-center m-b-10"><i class="feather icon-heart" title="Likes"></i> {{ likes_today }} </h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-message-circle" title="Replies"></i> {{ replies_today }}</h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-repeat" title="Retweets"></i> {{ retweets_today }}</h6>                                            
+                                    </div>
+                                    <div class="col-3">
+                                        <h6 class="text-center  m-b-10"><i class="feather icon-feather" title="Retweets with quotes."></i> {{ quotes_today }}</h6>                                            
+                                    </div>                                                                                
+                                </div>
+                            </div>                                 
+                        </div>
+                    </div>
+                    <!--[ tweets today section ] end-->
+                </div>
+            </div>
+
+            <div id="allTimeTweets" style="display: none;">
+                <!-- [ top tweets ] start -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card toptweet">
+                            <div class="card-header">
+                                <h5>All time popular Tweets</h5>
+                                <p>(since recording started)</p>
+                            </div>
+                            <div class="card-block">
+                                <div id="carouselExampleIndicators" class="carousel slide" data-interval="false">
+                                    <ol class="carousel-indicators">
+                                        <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+                                        <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+                                        <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+                                    </ol>
+                                    <div class="carousel-inner">
+                                    {% for tweet in alltime_top_tweets %}
+                                        {% if forloop.counter == 1 %}
+                                        <div class="carousel-item active">
+                                            <div class="row">
+                                        {% elif forloop.counter == 4 or forloop.counter == 7 %}
+                                        <div class="carousel-item">
+                                            <div class="row">
+                                        {% endif %}
+                                            
+                                                <div class="col-md-12 col-xl-4">
+                                                    <div class="card toptweet{{ forloop.counter }}">
+                                                        Tweet Score: {{ tweet.tweet_score }}
+                                                        <div class="card-block">
+                                                            {{ tweet.tweet_html|safe }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                        {% if forloop.counter == 3 or forloop.counter == 6 or forloop.counter == 9 %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                    {% endfor %}
+                                    </div>
+                                    <a class="carousel-control-prev" style="width: 1%" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                                        <span class="carousel-control-prev-icon" style="left:0; margin-left: 0;filter: invert(100%);" aria-hidden="true"></span>
+                                        <span class="sr-only">Previous</span>
+                                    </a>
+                                    <a class="carousel-control-next" style="width: 1%" href="#carouselExampleIndicators" role="button" data-slide="next">
+                                        <span class="carousel-control-next-icon" style="right:0; margin-right: 0;filter: invert(100%);" aria-hidden="true"></span>
+                                        <span class="sr-only">Next</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [ top tweets ] end -->
+            </div>    
+
+            <div id="insights" style="display: none;">
+                <div class="row">
+                    <!--[ Recent Users ] start-->
+                    <div class="col-xl-8 col-md-6">
+                        <div class="card Recent-Users">
+                            <div class="card-header">
+                                <h5>Top 10 Users of {{ segment }}</h5>
+                            </div>
+                            <div class="card-block px-0 py-3">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <!-- <tbody> -->
+                                            {% for top_user in top10_users %}
+                                            <tr data-toggle="collapse" data-target="#accordion{{ forloop.counter }}" class="clickable collapse-row collapsed">
+                                                <td><i class="fa fa-fw fa-chevron-down"></i>
+                                                    <i class="fa fa-fw fa-chevron-right"></i>
+                                                    <img class="rounded-circle" style="width:40px;" src="{{ top_user.profile_image_url }}" alt="activity-user">
+                                                </td>
+                                                <td>
+                                                    <h6 class="mb-1">{{ top_user.name }}</h6>
+                                                    <p class="m-0"><a href="https://twitter.com/{{ top_user.username }}" target="_blank">@{{ top_user.username }}</a></p>
+                                                </td>
+                                                <td>
+                                                    <p>Score: {{ top_user.tweet_score }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr id="accordion{{ forloop.counter }}" class="collapse out">
+                                                <td colspan="3">
+                                                    <div>
+                                                        <p class="mb-0">{{ top_user.description|linebreaks }}</p>
+                                                        <p class="mb-1"> Tweets per day (avrg.): {{ top_user.public_metrics.average  }} </p>
+                                                        <p class="mb-1"> Request count: {{ top_user.current_request.count  }} / Last interaction: {{ top_user.current_request.last_used }} </p>
+                                                        <p class="mb-1"> Followers: {{ top_user.public_metrics.followers_count }} / Following: {{ top_user.public_metrics.following_count }} / Tweets: {{ top_user.public_metrics.tweet_count }} </p>
+                                                        {% if top_user.location %}
+                                                        <p></p>
+                                                        <p class="mb-1"> Location: <a href="https://www.google.com/maps?q={{ top_user.location }}" target="_blank"><i class="feather icon-map-pin"></i> {{ top_user.location }}</a></p>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            
+                                        <!-- </tbody> -->
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--[ Recent Users ] end-->
+
+                    <!-- [ tagcloud ] start -->
+                    <div class="col-md-12 col-xl-4">
+                        <div class="card" style="display: flex; flex-direction: column;">
+                            <div class="card-header">
+                                <h5>Tagcloud</h5>
+                            </div>
+                            <div class="card-block" style="flex: 1;">
+                                <div id="tagcloud" style="height: 500px;">
+                                    <p>Tagcloud could not be loaded.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- [ tagcloud ] end -->
+                </div>
+            </div>
+
+            <div id="hotTweets" style="display: block;">
+                <!-- [ hot tweets ] start -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card toptweet">
+                            <div class="card-header">
+                                <h5>Tweets worth an interaction</h5>
+                            </div>
+                            <div class="card-block">
+                                <div id="HotTweetscarouselIndicators" class="carousel slide" data-interval="false">
+                                    <ol class="carousel-indicators">
+                                    {% for tweet in syn_tweets %}
+                                    {% if forloop.counter == 1 %}
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="0" class="active"></li>
+                                    {% elif forloop.counter == 4 %} 
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="1"></li>
+                                    {% elif forloop.counter == 7 %}
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="2"></li>
+                                    {% elif forloop.counter == 10 %}
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="3"></li>
+                                    {% elif forloop.counter == 13 %}
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="4"></li>
+                                    {% elif forloop.counter == 16 %}
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="5"></li>
+                                    {% elif forloop.counter == 19 %} 
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="6"></li>
+                                    {% elif forloop.counter == 22 %}
+                                        <li data-target="#HotTweetscarouselIndicators" data-slide-to="7"></li>
+                                    {% endif %}
+                                    {% endfor %}
+                                    </ol>
+                                    <div class="carousel-inner">
+                                    {% for tweet in syn_tweets %}
+                                        {% if forloop.counter == 1 %}
+                                        <div class="carousel-item active">
+                                            <div class="row">
+                                        {% elif forloop.counter == 4 or forloop.counter == 7 or forloop.counter == 10 or forloop.counter == 13 or forloop.counter == 16 or forloop.counter == 19 or forloop.counter == 22 %}
+                                        <div class="carousel-item">
+                                            <div class="row">
+                                        {% endif %}
+                                            
+                                                <div class="col-md-12 col-xl-4">
+                                                    <div class="card hottweet{{ forloop.counter }}">
+                                                        Tweet Synergy: {{ tweet.synergy }}
+                                                        <div class="card-block">
+                                                            {{ tweet.tweet_html|safe }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                        {% if forloop.last or forloop.counter == 3 or forloop.counter == 6 or forloop.counter == 9  or forloop.counter == 12 or forloop.counter == 15 or forloop.counter == 18 or forloop.counter == 21 or forloop.counter == 24%}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                    {% endfor %}
+                                    </div>
+                                    <a class="carousel-control-prev" style="width: 1%" href="#HotTweetscarouselIndicators" role="button" data-slide="prev">
+                                        <span class="carousel-control-prev-icon" style="left:0; margin-left: 0;filter: invert(100%);" aria-hidden="true"></span>
+                                        <span class="sr-only">Previous</span>
+                                    </a>
+                                    <a class="carousel-control-next" style="width: 1%" href="#HotTweetscarouselIndicators" role="button" data-slide="next">
+                                        <span class="carousel-control-next-icon" style="right:0; margin-right: 0;filter: invert(100%);" aria-hidden="true"></span>
+                                        <span class="sr-only">Next</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [ hot tweets ] end -->
+            </div>
+            <div id="settings" style="display: none;">        
+                <div class="row">
+                    <!--[ request name headline ] start-->
+                    <div class="col-md-12">
+                        <div class="card headline">
+                            <div class="card-block">
+                                <div class="row d-flex align-items-center">
+                                    <div class="col-12">
+                                        <p class="text-left m-b-10">Last refresh: {{ last_refresh }}</p>
+                                        <p></p>
+                                        <p class="text-left m-b-10"><a href={% url 'deletedashboard' dashboard=segment %}><i class="feather icon-trash-2 f-25 text-c-red"></i> Delete {{ segment }}</a></p><p>(All data will be deleted.)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--[ request name headline ] end-->
+                    </div>                    
+                <!-- [ Main Content ] end -->
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+<script src="/static/assets/plugins/chart-morris/js/raphael.min.js"></script>
+<script src="/static/assets/plugins/chart-morris/js/morris.min.js"></script>
+<!-- <script src="/static/assets/js/pages/usage-chart-index.js"></script> -->
+
+<script src="/static/assets/js/wordcloud2.js"></script>
+
+<!-- <script>WordCloud(document.getElementById("tagcloud"), { list: {{tagcloud|safe}} } );</script> -->
+
+<script>
+    'use strict';
+$(document).ready(function() {
+    setTimeout(function() {
+
+    // [ line-angle-chart ] Start
+    Morris.Line({
+        element: 'morris-line-chart',
+        data: {{timeline|safe}},
+        xkey: 'date',
+        redraw: true,
+        resize: true,
+        smooth: false,
+        ykeys: ['tweets', 'likes', 'replies', 'retweets', 'quotes'],
+        hideHover: 'auto',
+        responsive:true,
+        labels: ['Tweets', 'Likes', 'Replies', 'Retweets', 'Quotes'],
+        xLabels: 'day',
+        lineColors: ['#04a9f5','#1dc4e9', '#1de9b6', '#A389D4', '#A389D4']
+        // ['#1de9b6', '#04a9f5', '#1de9b6', '#04a9f5', '#04a9f5']
+    });
+    // [ line-angle-chart ] end
+        }, 700);
+});
+
+function HandleView(element) {
+        disabledisplay('stats');
+        disabledisplay('allTimeTweets');
+        disabledisplay('insights');
+        disabledisplay('hotTweets');
+        disabledisplay('settings')
+
+        enabledisplay(element);
+
+        if (element == 'stats') {
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        if (element == 'insights') {
+            WordCloud(document.getElementById("tagcloud"), { list: {{tagcloud|safe}} } );
+        }
+} 
+
+function disabledisplay(element) {
+  var x = document.getElementById(element);
+  if (x.style.display === "block") {
+    x.style.display = "none";
+  }
+}
+
+function enabledisplay(element) {
+  var x = document.getElementById(element);
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  }
+}
+
+</script>
+
+{% endblock javascripts %}

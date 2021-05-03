@@ -1,0 +1,74 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} New request {% endblock %} 
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="pcoded-content">
+    <div class="pcoded-inner-content">
+        <!-- [ breadcrumb ] start -->
+        <div class="page-header">
+            <div class="page-block">
+                <div class="row align-items-center">
+                    <div class="col-md-12">
+                        <div class="page-header-title">
+                            <h5 class="m-b-10">Create new request</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [ breadcrumb ] end -->
+        <div class="main-body">
+            <div class="page-wrapper">
+                <!-- [ Main Content ] start -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <!-- Input group -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Details</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if error_reason %}
+                                    <div class="alert alert-danger" role="alert">
+                                        {{ error_reason }}
+                                    </div>
+                                {% endif %}
+                                <form method="POST">
+                                    {% csrf_token %}
+                                        <div class="form-group">
+                                        <label>Name</label>
+                                        <!-- <input type="text" class="form-control" placeholder="Give your request a name"> -->
+                                        {{ form.new_request_name }}
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Query</label>
+                                        <div class="input-group mb-3">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text" id="basic-addon1">#</span>
+                                            </div>
+                                            <!-- <input type="text" class="form-control" placeholder="Enter the hashtag you want to monitor" aria-label="Hashtag" aria-describedby="basic-addon1"> -->
+                                            {{ form.new_hashtag }}
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </form>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [ Main Content ] end -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
