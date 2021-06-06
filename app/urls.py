@@ -20,6 +20,8 @@ urlpatterns = [
 
     path('load_tweets/<str:dashboard>', views.load_tweets, name='load_tweets'),
 
+    path('load_popular_tweets/<str:dashboard>', views.load_popular_tweets, name='load_popular_tweets'),
+
     # refresh data request
     path('refresh/<str:name>', views.refresh, name='refresh'),
 

@@ -36,7 +36,7 @@
                                 <a class="nav-link" id="pills-stats-tab" data-toggle="pill" onclick="HandleView('stats')" href="#" role="tab" aria-controls="pills-stats" aria-selected="false">Statistics</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" id="pills-allTimeTweets-tab" data-toggle="pill" onclick="HandleView('allTimeTweets')" href="#" role="tab" aria-controls="pills-allTimeTweets" aria-selected="false">All Time Popular</a>
+                                <a class="nav-link" id="pills-allTimeTweets-tab" data-toggle="pill" onclick="HandleView('PopularTweets')" href="#" role="tab" aria-controls="pills-PopularTweets" aria-selected="false">All Time Popular</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="pills-insights-tab" data-toggle="pill" onclick="HandleView('insights')" href="#" role="tab" aria-controls="pills-insights" aria-selected="false">Insights</a>                
@@ -237,64 +237,6 @@
                 </div>
             </div>
 
-            <div id="allTimeTweets" style="display: none;">
-                <!-- [ top tweets ] start -->
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card toptweet">
-                            <div class="card-header">
-                                <h5>All time popular Tweets</h5>
-                                <p>(since recording started)</p>
-                            </div>
-                            <div class="card-block">
-                                <div id="carouselExampleIndicators" class="carousel slide" data-interval="false">
-                                    <ol class="carousel-indicators">
-                                        <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
-                                        <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
-                                        <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
-                                    </ol>
-                                    <div class="carousel-inner">
-                                    {% for tweet in alltime_top_tweets %}
-                                        {% if forloop.counter == 1 %}
-                                        <div class="carousel-item active">
-                                            <div class="row">
-                                        {% elif forloop.counter == 4 or forloop.counter == 7 %}
-                                        <div class="carousel-item">
-                                            <div class="row">
-                                        {% endif %}
-                                            
-                                                <div class="col-md-12 col-xl-4">
-                                                    <div class="card toptweet{{ forloop.counter }}">
-                                                        Tweet Score: {{ tweet.tweet_score }}
-                                                        <div class="card-block">
-                                                            {{ tweet.tweet_html|safe }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                        {% if forloop.counter == 3 or forloop.counter == 6 or forloop.counter == 9 %}
-                                            </div>
-                                        </div>
-                                        {% endif %}
-
-                                    {% endfor %}
-                                    </div>
-                                    <a class="carousel-control-prev" style="width: 1%" href="#carouselExampleIndicators" role="button" data-slide="prev">
-                                        <span class="carousel-control-prev-icon" style="left:0; margin-left: 0;filter: invert(100%);" aria-hidden="true"></span>
-                                        <span class="sr-only">Previous</span>
-                                    </a>
-                                    <a class="carousel-control-next" style="width: 1%" href="#carouselExampleIndicators" role="button" data-slide="next">
-                                        <span class="carousel-control-next-icon" style="right:0; margin-right: 0;filter: invert(100%);" aria-hidden="true"></span>
-                                        <span class="sr-only">Next</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- [ top tweets ] end -->
-            </div>    
-
             <div id="insights" style="display: none;">
                 <div class="row">
                     <!--[ Recent Users ] start-->
@@ -362,6 +304,24 @@
                 </div>
             </div>
 
+            <div id="PopularTweets" style="display: none;">
+                <!-- [ popular tweets ] start -->
+                    <div id="scroller_popTweets" class="mb-3">
+
+                        <!-- template schema, hidden from the dom -->
+                        <template id="post_template_popTweets">
+
+                            <!-- template content -->
+                            <div class="row" id="popTweets"></div>
+
+                        </template>
+                </div>
+                <div class="d-flex justify-content-center mb-3" id="popTweets_sentinel">
+                    <div class="spinner-border" role="status2"></div>
+                </div>
+                <!-- [ popular tweets ] end -->
+            </div>
+
             <div id="hotTweets" style="display: block;">
                 <!-- [ hot tweets ] start -->
                     <div id="scroller" class="mb-3">
@@ -379,6 +339,7 @@
                 </div>
                 <!-- [ hot tweets ] end -->
             </div>
+
             <div id="settings" style="display: none;">        
                 <div class="row">
                     <!--[ request name headline ] start-->
@@ -444,7 +405,7 @@ $(document).ready(function() {
 
 function HandleView(element) {
         disabledisplay('stats');
-        disabledisplay('allTimeTweets');
+        disabledisplay('PopularTweets');
         disabledisplay('insights');
         disabledisplay('hotTweets');
         disabledisplay('settings')
@@ -491,6 +452,8 @@ window.twttr = (function(d, s, id) {
 
   return t;
 }(document, "script", "twitter-wjs"));
+
+// hot tweets endless scrolling
 
 // Get references to the dom elements
 var scroller = document.querySelector("#scroller");
@@ -560,6 +523,74 @@ var intersectionObserver = new IntersectionObserver(entries => {
 
 intersectionObserver.observe(sentinel);
 
+// popular tweets endless scrolling
+
+// Get references to the dom elements
+var scroller2 = document.querySelector("#scroller_popTweets");
+var template2 = document.querySelector('#post_template_popTweets');
+var sentinel2 = document.querySelector('#popTweets_sentinel');
+
+// Set a counter to count the items loaded
+var counter = 0;
+
+// Function to request new items and render to the dom
+function loadPopularTweets() {
+
+  // Use fetch to request data and pass the counter value in the QS
+  fetch('/load_popular_tweets/{{segment}}').then((response) => {
+
+    // Convert the response data to JSON
+    response.json().then((data) => {
+
+      // If empty JSON, exit the function
+      if (!data.length) {
+
+        // Replace the spinner with "No more posts"
+        sentinel2.innerHTML = "No more Tweets.";
+        return;
+      }
+
+      // Iterate over the items in the response
+      for (var i = 0; i < data.length; i+=3) {
+
+        // Clone the HTML template
+        let template_clone2 = template2.content.cloneNode(true);
+
+        // Query & update the template content
+        template_clone2.querySelector("#popTweets").innerHTML = 
+            '<div class="col-md-6 col-xl-4"><div class="card mb-3 animated fadeIn shadow-sm"> <div class="card-block" id="content">'+
+                data[i]+
+            '</div></div></div>'+
+            '<div class="col-md-6 col-xl-4"><div class="card mb-3 animated fadeIn shadow-sm"> <div class="card-block" id="content">'+
+                data[i+1]+
+            '</div></div></div>'+
+            '<div class="col-md-6 col-xl-4"><div class="card mb-3 animated fadeIn shadow-sm"> <div class="card-block" id="content">'+
+                data[i+2]+
+            '</div></div></div>';
+
+        // Append template to dom
+        scroller2.appendChild(template_clone2);
+
+        counter += 1;
+
+        twttr.widgets.load();
+      }
+    }); 
+  }
+  )
+}
+// Create a new IntersectionObserver instance
+var intersectionObserver2 = new IntersectionObserver(entries => {
+
+if (entries[0].intersectionRatio <= 0) {
+  return;
+}
+
+loadPopularTweets();
+
+});
+
+intersectionObserver2.observe(sentinel2);
 
 </script>
 

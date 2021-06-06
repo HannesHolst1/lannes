@@ -282,6 +282,17 @@ def get_tweets(request_name, last_syn):
 
     return synergetic_tweets
 
+def get_historic_tweets(request_name, last_score):
+    client = MongoClient(config.mongodb['uri'])
+    db = client[config.mongodb['database']]
+    tweetcollection = db[config.mongodb['tweets_collection']]
+    if last_score:
+        historic_tweets = list(tweetcollection.find({"requests": request_name, "tweet_score": {"$lt": last_score, "$exists": True}}, {"_id": 0,"tweet_html":1, "tweet_score":1}, sort=[("tweet_score", pymongo.DESCENDING)], limit=6))    
+    else:
+        historic_tweets = list(tweetcollection.find({"requests": request_name,  "tweet_score": {"$ne": 0, "$exists": True}}, {"_id": 0,"tweet_html":1, "tweet_score":1}, sort=[("tweet_score", pymongo.DESCENDING)], limit=6))    
+
+    return historic_tweets
+
 def main():
     pass
 

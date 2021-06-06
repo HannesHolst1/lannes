@@ -45,6 +45,7 @@ def dashboard(request, dashboard):
     html_template = loader.get_template( 'index.html' )
     response = HttpResponse(html_template.render(context, request))
     response.set_cookie('last_syn', 0)
+    response.set_cookie('last_score', 0)
     return response
 
 @login_required(login_url="/login/")
@@ -146,3 +147,25 @@ def load_tweets(request, dashboard):
 
     return res
 
+@login_required(login_url="/login/")
+def load_popular_tweets(request, dashboard):
+    last_score = 0 
+
+    if 'last_score' in request.COOKIES:
+        if request.COOKIES['last_score'] != '0':
+            last_score = float(request.COOKIES['last_score'])
+
+    tweets = napo.get_historic_tweets(dashboard, last_score)   
+
+    db = []
+    last_score = 0
+    for i, tweet in enumerate(tweets):
+        if 'tweet_html' in tweet:
+            db.append(tweet['tweet_html'])
+        if i == len(tweets)-1:
+            last_score = tweet['tweet_score']
+
+    res = HttpResponse(json.dumps(db))
+    res.set_cookie('last_score', last_score)
+
+    return res
